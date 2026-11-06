@@ -1,0 +1,9 @@
+{
+  "name": "my-forum",
+  "base_url": "http://127.0.0.1:8080",
+  "forum_root": "/var/www/flarum",
+  "token_file": "~/.config/flarum2/token",
+  "design_sets_dir": "design-sets",
+  "public_assets_subdir": "design-sets",
+  "services": ["nginx", "php8.4-fpm", "mariadb"]
+}

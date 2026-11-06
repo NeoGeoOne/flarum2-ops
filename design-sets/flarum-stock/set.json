@@ -1,0 +1,16 @@
+{
+  "name": "flarum-stock",
+  "title": "Flarum stock",
+  "description": "Flarum 2.0's out-of-the-box look: every theme key at its default, no custom LESS, header or footer. Apply it to return to stock.",
+  "flarum": "^2.0",
+  "requires_extensions": [],
+  "settings": {
+    "theme_primary_color": "#4D698E",
+    "theme_secondary_color": "#4D698E",
+    "color_scheme": "auto",
+    "show_theme_selector": true,
+    "theme_colored_header": false
+  },
+  "images": {},
+  "tags": {}
+}

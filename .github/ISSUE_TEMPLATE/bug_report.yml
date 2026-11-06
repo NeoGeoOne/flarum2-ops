@@ -1,0 +1,39 @@
+name: Bug report
+description: Something does not work as expected.
+labels:
+- bug
+body:
+- type: dropdown
+  id: area
+  attributes:
+    label: Area
+    options:
+    - MCP server / CLI (tools/flarum2-ops)
+    - design-set engine
+    - skill (flarum2-design-ops)
+    - example design-sets
+    - other
+  validations:
+    required: true
+- type: textarea
+  id: steps
+  attributes:
+    label: Steps to reproduce
+    placeholder: '1. ...
+
+      2. ...
+
+      3. ...'
+  validations:
+    required: true
+- type: textarea
+  id: expected
+  attributes:
+    label: Expected and actual behaviour
+  validations:
+    required: true
+- type: input
+  id: environment
+  attributes:
+    label: Environment
+    placeholder: Flarum, PHP and Node versions; agent host (e.g. Claude Code, OpenCode) and version

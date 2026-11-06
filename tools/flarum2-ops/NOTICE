@@ -1,0 +1,19 @@
+flarum2-ops
+Copyright (c) 2026 NeoGeoOne
+
+This product is a fork of mcp-for-flarum 0.8.0
+(https://github.com/linkrobins/mcp-for-flarum), Copyright (c) 2026 Link Robins,
+licensed under the MIT License (see LICENSE). The original copyright and
+permission notice are retained in LICENSE as the license requires.
+
+Changes in this fork (summary):
+- managed-hosting features of the original removed (diagnostics tools, snapshot hook,
+  Docker/registry files)
+- read-only by default; per-call timeouts; API path normalisation (/api/x == /x)
+- status-aware raw responses, NDJSON parsing (DELETE /api/cache), multipart uploads
+- actor verification (a rejected token silently acts as a guest in Flarum 2)
+- admin tools: settings get/set/reset, image upload/delete, cache clear,
+  extension toggle, permission set, health
+- design-set engine: snapshot / validate / diff / apply / preview / rollback / gallery
+- CLI (flarum2-ops) sharing the same engine
+- MCP tool annotations; corrected 2.0-stable help texts

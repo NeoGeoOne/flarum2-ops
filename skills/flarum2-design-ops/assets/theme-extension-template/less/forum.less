@@ -1,0 +1,18 @@
+/*
+ * __PACKAGE_TITLE__ — Flarum 2 theme extension, forum styles.
+ *
+ * Extension LESS is compiled AFTER core and custom_less, so plain rules here win
+ * ties against core. Use the same layers as design-sets (see the skill's
+ * references/less-theming.md): palette variables → CSS custom properties per
+ * html[data-theme…] → component rules. Breakpoints: @media @phone / @tablet-up / @desktop-up.
+ */
+
+// Palette (redefine Flarum source variables; derived shades follow)
+// @body-bg-dark: #0F172A;
+// @border-radius: 6px;
+
+html[data-theme^=light] {
+}
+
+html[data-theme^=dark] {
+}

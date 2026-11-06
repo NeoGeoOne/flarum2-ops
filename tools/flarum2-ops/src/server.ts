@@ -1,0 +1,190 @@
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { FlarumClient } from "./flarum-client.js";
+import { registerTools } from "./tools/index.js";
+import { registerExtensionTools } from "./tools/extensions.js";
+import { registerDocsTools } from "./tools/docs.js";
+import { registerDevTools } from "./tools/dev.js";
+import { registerTroubleshootTool } from "./tools/troubleshoot.js";
+import { registerExtensionPrompts, registerTroubleshootPrompts } from "./prompts.js";
+import { withStrictInputs } from "./tools/shared.js";
+import { registerOpsTools } from "./tools/ops-tools.js";
+import { loadConfig, loadToken } from "./config.js";
+import { Ops } from "./ops.js";
+import { VERSION, DEFAULT_USER_AGENT } from "./version.js";
+
+export { VERSION, DEFAULT_USER_AGENT };
+
+/**
+ * Build the server-level instructions returned in the MCP initialize response.
+ * Compliant clients inject these into the model's context as standing guidance,
+ * so this is the strongest server-side lever for steering the AI toward the
+ * built-in Flarum knowledge (short of client-side hooks the server can't
+ * control). Built per-session from the enabled capabilities so the AI is only
+ * ever told about tools that are actually registered for it.
+ */
+export function buildInstructions(caps: {
+  docs: boolean;
+  dev: boolean;
+  troubleshoot: boolean;
+  extensions: boolean;
+  ops?: boolean;
+}): string {
+  const { dev } = caps;
+  const lines: string[] = [
+    "This server connects you to a Flarum forum's API and ships built-in Flarum 2.0 knowledge. Prefer these tools and references over training-data assumptions about Flarum (its API and conventions change). Use the right capability for the job:",
+    "- **Forum data**: read with `flarum_list`/`flarum_get`/`flarum_search` and write with `flarum_create`/`flarum_update`/`flarum_delete`/`flarum_create_discussion`/`flarum_reply` (`flarum_request` is the raw escape hatch; paths are relative to /api, a leading /api is stripped). Call `flarum_whoami` first to confirm which user and permissions you're acting as (a rejected token silently acts as a guest). Respect read-only mode (write tools are hidden and mutations refused when it's on), and prefer a typed tool over a hand-built URL.",
+  ];
+  if (caps.ops) {
+    lines.push(
+      "- **Admin settings, images and design-sets**: start with `flarum_doctor`. Read settings with `flarum_settings_get` (DB-backed; the API has no settings GET). Change the forum's look through design-sets (`designset_validate` → `designset_diff` → `designset_preview`/`designset_apply` → `designset_rollback`), not ad-hoc setting writes. Every mutating tool is a dry run unless `confirm: true`: show the dry-run result to the user and only confirm after they approve. Extension toggles and permission changes always need their own explicit approval.",
+    );
+  }
+  if (dev) {
+    lines.push(
+      "- **Building or reviewing extension code**: BEFORE writing, scaffolding, modifying, or reviewing ANY Flarum 2.0 extension, call `flarum_dev` for the relevant topic(s) and follow its contracts. They encode the conventions and compatibility rules that prevent real production bugs: cross-database portability, fail-closed API fields, lazy-chunk-safe frontend extends, queue-driver portability (sync/database/redis/Horizon), Redis and multi-server file storage, and soft-dependent integration with realtime/audit/widgets/sitemap. Treat it as a requirement. The `build-flarum-extension`, `review-flarum-extension`, and `check-flarum-compatibility` prompts run this workflow for you.",
+    );
+  }
+  if (caps.docs) {
+    lines.push(
+      "- **How Flarum itself works**: use `flarum_docs_search`/`flarum_docs_get`/`flarum_docs_list` for the authoritative, live 2.0 documentation (extenders, endpoints, permissions, settings) instead of recalling it from memory.",
+    );
+  }
+  if (caps.troubleshoot) {
+    lines.push(
+      "- **A broken or misbehaving forum / helping a non-developer get support**: use `flarum_troubleshoot` for plain-language guidance (safe first-aid fixes, how to run `php flarum info` and find logs on their hosting, what common errors mean, and how to write a redacted support request and where to post it), and the `prepare-flarum-support-request` prompt to assemble that report from a forum that still loads. This is self-service and needs no server access.",
+    );
+  }
+  if (caps.extensions) {
+    lines.push(
+      "- **Installing/updating extensions on the forum**: use the `flarum_ext_*` tools. Run `flarum_ext_why_not` to check compatibility before installing, don't auto-enable, and take a backup before a major or bulk update, since enabling an incompatible extension can take the whole site down.",
+    );
+  }
+  if (dev) {
+    lines.push(
+      "When a task involves building or auditing an extension, consulting `flarum_dev` first is the expected workflow.",
+    );
+  }
+  return lines.join("\n");
+}
+
+/**
+ * Build a FlarumClient from environment + forum.json.
+ *
+ * flarum2-ops change: READ-ONLY BY DEFAULT. Writes need FLARUM_MODE=write
+ * (and READ_ONLY unset). The credential comes from FLARUM_API_KEY or the
+ * 0600 token file named in forum.json (default ~/.config/flarum2/token).
+ */
+export function clientFromEnv(): FlarumClient {
+  const cfg = loadConfig();
+  const baseUrl = process.env.FLARUM_URL || cfg.baseUrl;
+  if (!baseUrl) {
+    process.stderr.write(
+      "[flarum2-ops] No forum URL. Set FLARUM_URL or base_url in forum.json.\n",
+    );
+    process.exit(1);
+  }
+  const readOnly =
+    process.env.FLARUM_MODE?.toLowerCase() !== "write" ||
+    /^(1|true|yes|on)$/i.test(process.env.READ_ONLY ?? "");
+  const token = loadToken(cfg);
+  if (token.warning) process.stderr.write(`[flarum2-ops] warning: ${token.warning}\n`);
+
+
+  return new FlarumClient({
+    baseUrl,
+    apiKey: token.token,
+    userId: process.env.FLARUM_USER_ID,
+    userAgent: process.env.FLARUM_USER_AGENT || DEFAULT_USER_AGENT,
+    timeoutMs: process.env.FLARUM_TIMEOUT ? Number(process.env.FLARUM_TIMEOUT) : undefined,
+    readOnly,
+  });
+}
+
+/**
+ * Whether the extension-management toolset is enabled. Off by default: these
+ * tools can composer-install/update/remove extensions, which is far higher
+ * privilege than ordinary content writes, so they require an explicit opt-in
+ * (FLARUM_EXTENSIONS=1/true/yes/on) on top of write mode and an admin key. The
+ * target forum must also have flarum/extension-manager installed.
+ */
+export function extensionsEnabled(): boolean {
+  return /^(1|true|yes|on)$/i.test(process.env.FLARUM_EXTENSIONS ?? "");
+}
+
+/**
+ * Whether the official-docs tools (flarum_docs_search/get/list) are enabled.
+ * On by default: they only read the public docs site and never touch the
+ * configured forum or its API key, so they're safe in any mode (including
+ * read-only and with no API key). Opt out with FLARUM_DOCS=0/false/off.
+ */
+export function docsEnabled(): boolean {
+  return !/^(0|false|no|off)$/i.test(process.env.FLARUM_DOCS ?? "");
+}
+
+/**
+ * Whether the extension-development reference tool (flarum_dev) is enabled. On
+ * by default: it serves static, curated development guidance and never touches
+ * the configured forum or its API key, so it's safe in any mode (including
+ * read-only and with no API key). Opt out with FLARUM_DEV=0/false/off.
+ */
+export function devEnabled(): boolean {
+  return !/^(0|false|no|off)$/i.test(process.env.FLARUM_DEV ?? "");
+}
+
+/**
+ * Whether the troubleshooting/support-request guide (flarum_troubleshoot, and
+ * the prepare-flarum-support-request prompt) is enabled. On by default: it
+ * serves static, curated guidance for forum admins and never touches the
+ * configured forum or its API key, so it's safe in any mode (including
+ * read-only and with no API key). Opt out with FLARUM_TROUBLESHOOT=0/false/off.
+ */
+export function troubleshootEnabled(): boolean {
+  return !/^(0|false|no|off)$/i.test(process.env.FLARUM_TROUBLESHOOT ?? "");
+}
+
+/** Ops (admin + design-set engine) for a client, using forum.json / env. */
+export function opsFromEnv(client: FlarumClient): Ops {
+  return new Ops(loadConfig(), client);
+}
+
+/** Build a fully-wired MCP server for a given Flarum client (and optional ops engine). */
+export function createMcpServer(client: FlarumClient, ops?: Ops): McpServer {
+  // Resolve enabled capabilities up front so the instructions describe exactly
+  // the tools that get registered below.
+  const docs = docsEnabled();
+  const dev = devEnabled();
+  const troubleshoot = troubleshootEnabled();
+  const extensions = extensionsEnabled();
+
+  const server = new McpServer(
+    { name: "flarum2-ops", version: VERSION },
+    {
+      instructions: buildInstructions({
+        docs,
+        dev,
+        troubleshoot,
+        extensions,
+        ops: Boolean(ops),
+      }),
+    },
+  );
+  // Register through a wrapper that makes every tool's input schema strict, so
+  // an unknown parameter is rejected rather than silently dropped — see
+  // withStrictInputs. Everything else passes straight through to the server.
+  const reg = withStrictInputs(server);
+
+  registerTools(reg, client);
+  if (ops) registerOpsTools(reg, ops);
+  if (extensions) registerExtensionTools(reg, client);
+  if (docs) registerDocsTools(reg, process.env.FLARUM_USER_AGENT || DEFAULT_USER_AGENT);
+  if (dev) {
+    registerDevTools(reg);
+    // Prompts orchestrate the flarum_dev workflow, so they ride with it.
+    registerExtensionPrompts(reg);
+  }
+  if (troubleshoot) {
+    registerTroubleshootTool(reg);
+    registerTroubleshootPrompts(reg);
+  }
+  return server;
+}

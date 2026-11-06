@@ -1,0 +1,24 @@
+{
+  "name": "slate-amber",
+  "title": "Slate & Amber",
+  "description": "Calm slate surfaces with an amber accent, colored header, self-hosted Karla, softer 8px radius. Demo set that exercises every design-set feature.",
+  "flarum": "^2.0",
+  "requires_extensions": [],
+  "settings": {
+    "theme_primary_color": "#B45309",
+    "theme_secondary_color": "#1E293B",
+    "color_scheme": "auto",
+    "show_theme_selector": true,
+    "theme_colored_header": true
+  },
+  "less": "custom.less",
+  "footer": "footer.html",
+  "static": "static",
+  "images": {},
+  "tags": {
+    "general": {
+      "color": "#B45309",
+      "icon": "fas fa-comments"
+    }
+  }
+}

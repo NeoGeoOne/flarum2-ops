@@ -1,0 +1,80 @@
+// =====================================================================
+// Design-set LESS → Flarum setting `custom_less` (forum frontend only).
+// Source of truth: this file. Apply with `flarum2-ops designset apply <name>`.
+//
+// Layers, from most to least robust:
+//   1. LESS palette variables  – redefine Flarum's source variables; every
+//      derived shade, button colour and high-contrast variant follows.
+//   2. CSS custom properties   – per scheme under html[data-theme…].
+//   3. Component rules         – nested under `html { }` so they beat
+//      extension stylesheets (custom_less is compiled BEFORE extension LESS).
+//
+// Rules: no data-uri(), no local @import; reference files from static/ as
+// @@ASSET:path@@ (becomes a versioned /assets/... URL); write ~"1 / 3" for
+// slashes that must not be computed as a division.
+// =====================================================================
+
+// ---------------------------------------------------------------------
+// 0. Fonts (optional, self-hosted: put .woff2 files in static/fonts/)
+// ---------------------------------------------------------------------
+// @font-face {
+//   font-family: 'Inter';
+//   font-style: normal;
+//   font-weight: 400 700;
+//   font-display: swap;
+//   src: url('@@ASSET:fonts/Inter-latin.woff2@@') format('woff2');
+//   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212;
+// }
+
+// ---------------------------------------------------------------------
+// 1. Palette (Flarum source variables, see core less/common/variables.less)
+//    Primary/secondary come from the settings theme_primary_color /
+//    theme_secondary_color; only override what differs from the defaults.
+// ---------------------------------------------------------------------
+// @body-bg-light:        #ffffff;
+// @body-bg-dark:         hsl(@secondary-hue, min(20%, @secondary-sat), 10%);
+// @text-color-light:     #111111;
+// @text-color-dark:      #dddddd;
+// @control-bg-light:     hsl(@secondary-hue, min(50%, @secondary-sat), 93%);
+// @control-bg-dark:      hsl(@secondary-hue, min(20%, @secondary-sat), 13%);
+// @border-radius:        4px;
+
+// ---------------------------------------------------------------------
+// 2. Runtime tokens (CSS custom properties)
+// ---------------------------------------------------------------------
+:root {
+  // --border-radius: 6px;
+  // --header-height: 56px;
+}
+
+html[data-theme^=light] {
+  // --discussion-title-color: #1f2937;
+}
+
+html[data-theme^=dark] {
+  // --discussion-title-color: #e5e7eb;
+}
+
+// Flarum 2.0.2 inlines `[data-theme^=dark] body{background:<derived from theme_secondary_color>}`
+// (FrontendServiceProvider critical CSS, specificity 0,1,1 > core's `body`), so a redefined
+// @body-bg-dark never reaches the page background unless it is re-asserted here:
+html[data-theme^=dark] body {
+  background: var(--body-bg);
+}
+// High-contrast variants re-override muted/control/button colours in core;
+// check them with `designset screenshot` before shipping.
+html[data-theme=light-hc],
+html[data-theme=dark-hc] {
+}
+
+// ---------------------------------------------------------------------
+// 3. Components (nested under html for +1 specificity over extension CSS)
+// ---------------------------------------------------------------------
+html {
+  // .Hero { }
+  // .DiscussionListItem { }
+  // .TagTile { }
+
+  // Breakpoints used by Flarum: phone ≤ 767.98px, tablet 768–991.98px, desktop ≥ 992px.
+  // @media (max-width: 767.98px) { }
+}

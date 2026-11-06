@@ -1,0 +1,81 @@
+// Slate & Amber — design-set "slate-amber" (custom_less source of truth)
+
+// 0. Fonts: Karla (SIL OFL 1.1, variable 400–800), self-hosted; see FONTS-LICENSE.md
+@font-face {
+  font-family: 'Karla';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('@@ASSET:fonts/Karla-latin-ext.woff2@@') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Karla';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('@@ASSET:fonts/Karla-latin.woff2@@') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+// 1. Palette: redefine Flarum's source variables so every derived shade,
+//    button colour and high-contrast variant follows.
+@body-bg-light:    #F8FAFC;
+@body-bg-dark:     #0F172A;
+@control-bg-light: #E2E8F0;
+@control-bg-dark:  #1E293B;
+@text-color-light: #0F172A;
+@text-color-dark:  #E2E8F0;
+@border-radius:    8px;
+
+// 2. Runtime tokens
+:root {
+  --sa-font: 'Karla', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+html[data-theme^=light] {
+  --discussion-title-color: #1E293B;
+}
+html[data-theme^=dark] {
+  --discussion-title-color: #F1F5F9;
+}
+// Flarum 2.0.2 inlines `[data-theme^=dark] body{background:<derived from theme_secondary_color>}`
+// (FrontendServiceProvider critical CSS, specificity 0,1,1 > core's `body`), so a redefined
+// @body-bg-dark never reaches the page background unless it is re-asserted here:
+html[data-theme^=dark] body {
+  background: var(--body-bg);
+}
+// Coloured header in dark mode: core uses the dark body colour as header text,
+// which is too dim on amber; use near-white text/controls instead (AA on #B45309).
+html[data-theme^=dark][data-colored-header=true] {
+  --header-color: #FFF7ED;
+  --header-control-color: #FFF7ED;
+}
+// High contrast: keep titles at full contrast (core darkens/lightens muted colours here).
+html[data-theme=light-hc] {
+  --discussion-title-color: #020617;
+}
+html[data-theme=dark-hc] {
+  --discussion-title-color: #FFFFFF;
+}
+
+// 3. Components (nested under html for +1 specificity over extension CSS)
+html {
+  body {
+    font-family: var(--sa-font);
+  }
+  .Hero {
+    border-bottom: 3px solid var(--primary-color);
+  }
+  .DiscussionListItem {
+    border-radius: var(--border-radius);
+  }
+  .Button--primary {
+    font-weight: 700;
+    letter-spacing: .01em;
+  }
+  @media (max-width: 767.98px) {
+    .DiscussionListItem {
+      border-radius: 0;
+    }
+  }
+}

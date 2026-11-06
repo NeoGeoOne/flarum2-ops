@@ -1,0 +1,20 @@
+{
+  "name": "template",
+  "title": "Template",
+  "description": "One-line description of the look (shown in the gallery).",
+  "flarum": "^2.0",
+  "requires_extensions": [],
+  "settings": {
+    "theme_primary_color": "#4D698E",
+    "theme_secondary_color": "#4D698E",
+    "color_scheme": "auto",
+    "show_theme_selector": true,
+    "theme_colored_header": false
+  },
+  "less": "custom.less",
+  "header": "header.html",
+  "footer": "footer.html",
+  "static": "static",
+  "images": {},
+  "tags": {}
+}

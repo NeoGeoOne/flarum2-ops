@@ -1,0 +1,17 @@
+# local configuration (paths of your forum)
+forum.json
+# generated / per-machine state
+design-sets/_snapshots/
+design-sets/_live-screenshots/
+design-sets/*/screenshots/
+design-sets/gallery.html
+design-sets/.applied.json
+design-sets/.lock
+# private evaluation material
+evals/
+# build output and dependencies
+tools/flarum2-ops/node_modules/
+tools/flarum2-ops/dist/
+__pycache__/
+*.pyc
+*.bak*

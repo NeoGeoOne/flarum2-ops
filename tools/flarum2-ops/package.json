@@ -1,0 +1,59 @@
+{
+  "name": "flarum2-ops",
+  "version": "1.0.0",
+  "description": "Flarum 2 MCP server + CLI: full JSON:API access, admin settings, image uploads, cache, extensions, and a snapshot/apply/rollback design-set engine. Fork of mcp-for-flarum 0.8.0 (MIT).",
+  "keywords": [
+    "flarum",
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "claude",
+    "forum",
+    "design-sets",
+    "admin"
+  ],
+  "license": "MIT",
+  "author": "NeoGeoOne",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NeoGeoOne/flarum2-ops.git",
+    "directory": "tools/flarum2-ops"
+  },
+  "homepage": "https://github.com/NeoGeoOne/flarum2-ops#readme",
+  "bugs": {
+    "url": "https://github.com/NeoGeoOne/flarum2-ops/issues"
+  },
+  "type": "module",
+  "bin": {
+    "flarum2-ops": "dist/cli.js",
+    "flarum2-ops-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "helpers",
+    "templates",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "pretest": "npm run build",
+    "test": "node --test",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "private": true
+}
